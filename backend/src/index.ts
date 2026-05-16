@@ -19,6 +19,9 @@ app.use(cors());
 app.use(express.json());
 app.use(rateLimiter);
 
+// Simple health check — no DB, no Redis, always 200
+app.get('/health', (_, res) => res.json({ ok: true, ts: Date.now() }));
+
 app.use('/api/auth', authRouter);
 app.use('/api/tracks', tracksRouter);  // auth applied per-route inside router
 app.use('/api/feed', authMiddleware, feedRouter);
