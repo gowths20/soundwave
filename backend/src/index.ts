@@ -13,7 +13,6 @@ import { rateLimiter } from './middleware/rateLimit';
 import { authMiddleware } from './middleware/auth';
 
 const app = express();
-const PORT = process.env.PORT ?? 3000;
 
 app.use(helmet());
 app.use(cors());
@@ -28,4 +27,11 @@ app.use('/api/follow', authMiddleware, socialRouter);
 app.use('/api/privacy', authMiddleware, privacyRouter);
 app.use('/api/close-friends', authMiddleware, closeFriendsRouter);
 
-app.listen(PORT, () => console.log(`Soundwave API running on :${PORT}`));
+// Export for Vercel serverless
+export default app;
+
+// Start server when run directly (local dev / Railway)
+if (require.main === module) {
+  const PORT = process.env.PORT ?? 3000;
+  app.listen(PORT, () => console.log(`Soundwave API running on :${PORT}`));
+}
