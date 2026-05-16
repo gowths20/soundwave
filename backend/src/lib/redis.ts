@@ -1,18 +1,19 @@
 import Redis from 'ioredis';
 
 const redisUrl = process.env.REDIS_URL ?? 'redis://localhost:6379';
+const isTLS = redisUrl.startsWith('rediss://');
 
 export const redis = new Redis(redisUrl, {
-  lazyConnect: true,          // don't connect on import — connect on first use
-  maxRetriesPerRequest: 1,    // fail fast instead of hanging
-  enableOfflineQueue: false,  // don't queue commands when disconnected
+  lazyConnect: true,
+  maxRetriesPerRequest: 1,
+  enableOfflineQueue: false,
+  ...(isTLS ? { tls: {} } : {}),  // required for Upstash rediss:// URLs
   retryStrategy: (times) => {
-    if (times > 3) return null; // stop retrying after 3 attempts
+    if (times > 3) return null;
     return Math.min(times * 500, 2000);
   },
 });
 
 redis.on('error', (err) => {
-  // log but don't crash — Redis is optional for basic playback
   console.warn('[redis] connection error (non-fatal):', err.message);
 });
