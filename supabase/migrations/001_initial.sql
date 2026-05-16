@@ -1,3 +1,12 @@
+-- Create dedicated schema (safe to run on a shared Supabase project)
+CREATE SCHEMA IF NOT EXISTS soundwave;
+SET search_path TO soundwave;
+
+-- Grant usage to Supabase roles
+GRANT USAGE ON SCHEMA soundwave TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA soundwave
+  GRANT ALL ON TABLES TO anon, authenticated, service_role;
+
 -- Users
 CREATE TABLE users (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -81,8 +90,8 @@ CREATE TABLE user_mood (
   updated_at  TIMESTAMPTZ DEFAULT now()
 );
 
--- Privacy gate function
-CREATE OR REPLACE FUNCTION get_viewer_tier(p_owner_id UUID, p_viewer_id UUID)
+-- Privacy gate function (scoped to soundwave schema)
+CREATE OR REPLACE FUNCTION soundwave.get_viewer_tier(p_owner_id UUID, p_viewer_id UUID)
 RETURNS TEXT AS $$
 BEGIN
   IF p_owner_id = p_viewer_id THEN RETURN 'self'; END IF;
