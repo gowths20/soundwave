@@ -23,8 +23,8 @@ new Worker('audio-processing', async (job) => {
     ffmpeg(inputPath)
       .output(`${tmpDir}/stream.m3u8`)
       .outputOptions(['-codec:a aac', '-b:a 128k', '-hls_time 10', '-hls_playlist_type vod'])
-      .on('end', resolve)
-      .on('error', reject)
+      .on('end', () => resolve())
+      .on('error', (err) => reject(err))
       .run();
   });
 
