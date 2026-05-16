@@ -1,8 +1,2 @@
-# Railway runs both workers as separate processes.
-# In Railway dashboard, create two services from the same repo
-# pointing to this backend/ folder:
-#
-#   Service 1 (API)    → start command: npm start
-#   Service 2 (Worker) → start command: npm run worker:all
-
+web: npm start
 worker: npm run worker:all
