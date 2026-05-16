@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Soundwave",
+    "slug": "soundwave",
+    "version": "1.0.0",
+    "scheme": "soundwave",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": { "backgroundColor": "#000000" },
+    "ios": {
+      "supportsTablet": false,
+      "infoPlist": {
+        "UIBackgroundModes": ["audio", "fetch"],
+        "NSMicrophoneUsageDescription": "Soundwave needs microphone access for voice messages",
+        "NSPhotoLibraryUsageDescription": "Soundwave needs access to your photos for profile and cover art"
+      }
+    },
+    "android": {
+      "adaptiveIcon": { "backgroundColor": "#000000" },
+      "permissions": ["READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE", "FOREGROUND_SERVICE"]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-av",
+      ["expo-notifications", { "sounds": [] }]
+    ]
+  }
+}

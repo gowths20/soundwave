@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Visibility {
+  everyone
+  friends
+  close_friends
+  nobody
+}
+
+model User {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  username    String   @unique
+  displayName String   @map("display_name")
+  email       String   @unique
+  avatarUrl   String?  @map("avatar_url")
+  bio         String?
+  isArtist    Boolean  @default(false) @map("is_artist")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  tracks         Track[]
+  listenHistory  ListenHistory[]
+  likes          Like[]
+  following      Friendship[]    @relation("follower")
+  followers      Friendship[]    @relation("following")
+  closeFriends   CloseFriend[]   @relation("owner")
+  closeFriendOf  CloseFriend[]   @relation("friend")
+  privacy        UserPrivacy?
+  mood           UserMood?
+
+  @@map("users")
+}
+
+model Track {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  title           String
+  genre           String?
+  bpm             Int?
+  durationSeconds Int?     @map("duration_seconds")
+  audioUrl        String?  @map("audio_url")
+  waveformUrl     String?  @map("waveform_url")
+  coverUrl        String?  @map("cover_url")
+  playCount       Int      @default(0) @map("play_count")
+  status          String   @default("processing")
+  uploadedAt      DateTime @default(now()) @map("uploaded_at")
+
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listenHistory ListenHistory[]
+  likes         Like[]
+
+  @@map("tracks")
+}
+
+model ListenHistory {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  trackId       String   @map("track_id") @db.Uuid
+  listenedAt    DateTime @default(now()) @map("listened_at")
+  secondsPlayed Int      @default(0) @map("seconds_played")
+  completed     Boolean  @default(false)
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@index([userId, listenedAt(sort: Desc)])
+  @@map("listen_history")
+}
+
+model Like {
+  userId  String   @map("user_id") @db.Uuid
+  trackId String   @map("track_id") @db.Uuid
+  likedAt DateTime @default(now()) @map("liked_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@id([userId, trackId])
+  @@map("likes")
+}
+
+model Friendship {
+  followerId  String   @map("follower_id") @db.Uuid
+  followingId String   @map("following_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  follower  User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId])
+  @@map("friendships")
+}
+
+model CloseFriend {
+  ownerId  String   @map("owner_id") @db.Uuid
+  friendId String   @map("friend_id") @db.Uuid
+  addedAt  DateTime @default(now()) @map("added_at")
+
+  owner  User @relation("owner", fields: [ownerId], references: [id], onDelete: Cascade)
+  friend User @relation("friend", fields: [friendId], references: [id], onDelete: Cascade)
+
+  @@id([ownerId, friendId])
+  @@map("close_friends")
+}
+
+model UserPrivacy {
+  userId                String     @id @map("user_id") @db.Uuid
+  nowPlayingVisibility  Visibility @default(friends) @map("now_playing_visibility")
+  likedSongsVisibility  Visibility @default(friends) @map("liked_songs_visibility")
+  historyVisibility     Visibility @default(close_friends) @map("history_visibility")
+  moodVisibility        Visibility @default(close_friends) @map("mood_visibility")
+  activityVisibility    Visibility @default(close_friends) @map("activity_visibility")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_privacy")
+}
+
+model UserMood {
+  userId     String   @id @map("user_id") @db.Uuid
+  mood       String?
+  confidence Float?
+  updatedAt  DateTime @default(now()) @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_mood")
+}
