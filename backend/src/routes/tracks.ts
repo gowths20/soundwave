@@ -78,18 +78,21 @@ tracksRouter.post('/:id/play', authMiddleware, async (req: AuthRequest, res) => 
   await db.listenHistory.create({ data: { userId, trackId, secondsPlayed, completed: secondsPlayed > 30 } });
   await db.track.update({ where: { id: trackId }, data: { playCount: { increment: 1 } } });
 
-  const privacyCached = await redis.get(`user:${userId}:privacy`);
-  const privacy = privacyCached ? JSON.parse(privacyCached) : null;
-
-  const track = await db.track.findUnique({ where: { id: trackId }, select: { title: true, coverUrl: true } });
-  const nowPlaying = JSON.stringify({ trackId, title: track?.title, coverUrl: track?.coverUrl, userId });
-  await redis.setex(`user:${userId}:now_playing`, 90, nowPlaying);
-
-  if (privacy?.nowPlayingVisibility !== 'nobody') {
-    await supabase.channel(`feed:${userId}`).send({
-      type: 'broadcast', event: 'now_playing',
-      payload: { userId, trackId, title: track?.title }
-    });
+  // Redis is optional — don't crash if unavailable
+  try {
+    const privacyCached = await redis.get(`user:${userId}:privacy`);
+    const privacy = privacyCached ? JSON.parse(privacyCached) : null;
+    const track = await db.track.findUnique({ where: { id: trackId }, select: { title: true, coverUrl: true } });
+    const nowPlaying = JSON.stringify({ trackId, title: track?.title, coverUrl: track?.coverUrl, userId });
+    await redis.setex(`user:${userId}:now_playing`, 90, nowPlaying);
+      if (privacy?.nowPlayingVisibility !== 'nobody') {
+        await supabase.channel(`feed:${userId}`).send({
+          type: 'broadcast', event: 'now_playing',
+          payload: { userId, trackId, title: track?.title }
+        });
+      }
+  } catch (redisErr: any) {
+    console.warn('[redis] now_playing update failed (non-fatal):', redisErr.message);
   }
 
   res.json({ ok: true });
