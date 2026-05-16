@@ -20,7 +20,7 @@ app.use(express.json());
 app.use(rateLimiter);
 
 app.use('/api/auth', authRouter);
-app.use('/api/tracks', authMiddleware, tracksRouter);
+app.use('/api/tracks', tracksRouter);  // auth applied per-route inside router
 app.use('/api/feed', authMiddleware, feedRouter);
 app.use('/api/profile', authMiddleware, profileRouter);
 app.use('/api/follow', authMiddleware, socialRouter);

@@ -6,7 +6,7 @@ import { uploadToR2, CDN_BASE } from '../lib/r2';
 import { audioQueue } from '../lib/queue';
 import { redis } from '../lib/redis';
 import { supabase } from '../lib/supabase';
-import { AuthRequest } from '../middleware/auth';
+import { AuthRequest, authMiddleware } from '../middleware/auth';
 
 export const tracksRouter = Router();
 const db = new PrismaClient();
@@ -14,7 +14,32 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 200
 
 const ALLOWED_TYPES = ['audio/mpeg', 'audio/wav', 'audio/flac'];
 
-tracksRouter.post('/upload', upload.fields([{ name: 'file' }, { name: 'cover' }]), async (req: AuthRequest, res) => {
+// Browse all tracks (latest first, optional genre filter)
+tracksRouter.get('/', async (req, res) => {
+  const { q, genre, limit = '20', offset = '0' } = req.query as Record<string, string>;
+  try {
+    const where: any = { status: 'ready' };
+    if (genre) where.genre = genre;
+    if (q) {
+      where.OR = [
+        { title: { contains: q, mode: 'insensitive' } },
+        { genre: { contains: q, mode: 'insensitive' } },
+      ];
+    }
+    const tracks = await db.track.findMany({
+      where,
+      orderBy: { uploadedAt: 'desc' },
+      take: parseInt(limit),
+      skip: parseInt(offset),
+      include: { user: { select: { id: true, displayName: true, avatarUrl: true, username: true } } },
+    });
+    res.json(tracks);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+tracksRouter.post('/upload', authMiddleware, upload.fields([{ name: 'file' }, { name: 'cover' }]), async (req: AuthRequest, res) => {
   const files = req.files as Record<string, Express.Multer.File[]>;
   const audioFile = files['file']?.[0];
   if (!audioFile || !ALLOWED_TYPES.includes(audioFile.mimetype)) {
@@ -45,7 +70,7 @@ tracksRouter.get('/:id', async (req, res) => {
   res.json(track);
 });
 
-tracksRouter.post('/:id/play', async (req: AuthRequest, res) => {
+tracksRouter.post('/:id/play', authMiddleware, async (req: AuthRequest, res) => {
   const { id: trackId } = req.params;
   const { secondsPlayed = 0 } = req.body;
   const userId = req.userId!;
@@ -70,7 +95,7 @@ tracksRouter.post('/:id/play', async (req: AuthRequest, res) => {
   res.json({ ok: true });
 });
 
-tracksRouter.delete('/:id', async (req: AuthRequest, res) => {
+tracksRouter.delete('/:id', authMiddleware, async (req: AuthRequest, res) => {
   const track = await db.track.findUnique({ where: { id: req.params.id } });
   if (!track || track.userId !== req.userId) return res.status(403).json({ error: 'Forbidden' });
   await db.track.delete({ where: { id: req.params.id } });
