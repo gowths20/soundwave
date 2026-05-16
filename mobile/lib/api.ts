@@ -10,10 +10,37 @@ async function getHeaders() {
   };
 }
 
+// Map snake_case API fields → camelCase for Track objects
+function normalizeTrack(t: any) {
+  if (!t || typeof t !== 'object') return t;
+  return {
+    id: t.id,
+    userId: t.user_id ?? t.userId,
+    title: t.title,
+    genre: t.genre,
+    bpm: t.bpm,
+    durationSeconds: t.duration_seconds ?? t.durationSeconds,
+    audioUrl: t.audio_url ?? t.audioUrl,
+    waveformUrl: t.waveform_url ?? t.waveformUrl,
+    coverUrl: t.cover_url ?? t.coverUrl,
+    playCount: t.play_count ?? t.playCount ?? 0,
+    status: t.status,
+    uploadedAt: t.uploaded_at ?? t.uploadedAt,
+  };
+}
+
+export function normalizeTracks(data: any) {
+  if (Array.isArray(data)) return data.map(normalizeTrack);
+  if (data && typeof data === 'object') return normalizeTrack(data);
+  return data;
+}
+
 export const api = {
   get: async (path: string) => {
     const res = await fetch(`${API_URL}${path}`, { headers: await getHeaders() });
-    return res.json();
+    const data = await res.json();
+    if (path.includes('/api/tracks')) return normalizeTracks(data);
+    return data;
   },
   post: async (path: string, body?: unknown) => {
     const res = await fetch(`${API_URL}${path}`, {

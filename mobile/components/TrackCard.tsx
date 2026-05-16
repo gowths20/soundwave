@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, Pressable } from 'react-native';
+import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
 import { Track } from '../types';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
 
@@ -8,20 +8,30 @@ export function TrackCard({ track }: { track: Track }) {
   const isActive = currentTrack?.id === track.id;
 
   return (
-    <Pressable onPress={() => togglePlay(track)} className="flex-row items-center gap-3 py-3">
+    <Pressable onPress={() => togglePlay(track)} style={styles.row}>
       <Image
-        source={{ uri: track.coverUrl ?? 'https://via.placeholder.com/48' }}
-        className="w-12 h-12 rounded-xl"
+        source={{ uri: track.coverUrl || 'https://picsum.photos/seed/' + track.id + '/48/48' }}
+        style={styles.cover}
       />
-      <View className="flex-1">
-        <Text className={`font-semibold text-sm ${isActive ? 'text-orange-500' : 'text-white'}`}>
+      <View style={styles.info}>
+        <Text style={[styles.title, isActive && styles.titleActive]} numberOfLines={1}>
           {track.title}
         </Text>
-        {track.genre && <Text className="text-zinc-500 text-xs">{track.genre}</Text>}
+        {track.genre ? <Text style={styles.genre}>{track.genre}</Text> : null}
       </View>
-      <Text className="text-zinc-500 text-xs">
-        {isActive && isPlaying ? '▶' : '⏸'}
+      <Text style={styles.icon}>
+        {isActive ? (isPlaying ? '⏸' : '▶') : '▶'}
       </Text>
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: 12 },
+  cover: { width: 48, height: 48, borderRadius: 8, backgroundColor: '#222' },
+  info: { flex: 1 },
+  title: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  titleActive: { color: '#FF5500' },
+  genre: { color: '#71717a', fontSize: 12, marginTop: 2 },
+  icon: { color: '#71717a', fontSize: 16, paddingHorizontal: 4 },
+});
