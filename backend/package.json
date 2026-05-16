@@ -2,6 +2,7 @@
   "name": "soundwave-backend",
   "version": "0.1.0",
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "ts-node-dev --respawn src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
@@ -24,6 +25,7 @@
     "multer": "^1.4.5-lts.1",
     "music-metadata": "^10.6.0",
     "uuid": "^10.0.0",
+    "prisma": "^5.14.0",
     "@aws-sdk/client-s3": "^3.600.0",
     "date-fns": "^3.6.0"
   },
@@ -35,7 +37,6 @@
     "@types/multer": "^1.4.11",
     "@types/node": "^20.14.2",
     "@types/uuid": "^10.0.0",
-    "prisma": "^5.14.0",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.4.5"
   }
